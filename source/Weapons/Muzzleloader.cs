@@ -687,9 +687,8 @@ public class MuzzleloaderClient : RangeWeaponClient
                 targetDirection = ClientAimingSystem.Zeroing(targetDirection, Stats.Zeroing);
 
                 RangedWeaponSystem.Shoot(slot, Stats.BulletsFiredPerShot, new((float)position.X, (float)position.Y, (float)position.Z), new(targetDirection.X, targetDirection.Y, targetDirection.Z), mainHand, ShootServerCallback);
-                ApplyRecoil(slot, player);
-
                 RangedWeaponSystem.SendStatusChange(player, RangedWeaponStatus.SpawnedProjectile, mainHand);
+                ApplyRecoil(slot, player);
 
                 break;
         }
