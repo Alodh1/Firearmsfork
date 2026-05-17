@@ -7,7 +7,7 @@ namespace Firearms;
 internal static class FirearmsAmmoUtility
 {
     public static readonly bool RecoilEnabled = false;
-    public static readonly bool ProjectileDisappearanceEnabled = false;
+    public static readonly bool ProjectileDisappearanceEnabled = true;
 
     public static int BulletItemsRequired(int bulletsLoaded, int bulletsLoadedPerBulletItem)
     {
