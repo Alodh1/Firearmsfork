@@ -430,3 +430,10 @@ Desktop.ini
 _tmp*/
 _inspect*/
 *.bak
+
+# Local backup/patch files
+*.bak*
+*.orig
+*.rej
+*.patch
+localSettings.props
