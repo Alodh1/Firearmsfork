@@ -1,0 +1,142 @@
+[
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-iron"
+    },
+    "pattern": [
+      [
+        "_______",
+        "_######",
+        "_______",
+        "_######",
+        "_______"
+      ],
+      [
+        "_______",
+        "______#",
+        "_______",
+        "______#",
+        "_______"
+      ]
+    ],
+    "name": "Wallmount",
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-iron-east"
+    },
+    "code": "firearms-wallmount-0-maltiezfirearms-wallmount--metal--east"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-tinbronze"
+    },
+    "pattern": [
+      [
+        "_______",
+        "_######",
+        "_______",
+        "_######",
+        "_______"
+      ],
+      [
+        "_______",
+        "______#",
+        "_______",
+        "______#",
+        "_______"
+      ]
+    ],
+    "name": "Wallmount",
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-tinbronze-east"
+    },
+    "code": "firearms-wallmount-0-maltiezfirearms-wallmount--metal--east"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-copper"
+    },
+    "pattern": [
+      [
+        "_______",
+        "_######",
+        "_______",
+        "_######",
+        "_______"
+      ],
+      [
+        "_______",
+        "______#",
+        "_______",
+        "______#",
+        "_______"
+      ]
+    ],
+    "name": "Wallmount",
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-copper-east"
+    },
+    "code": "firearms-wallmount-0-maltiezfirearms-wallmount--metal--east"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "_______",
+        "_######",
+        "_______",
+        "_######",
+        "_______"
+      ],
+      [
+        "_______",
+        "______#",
+        "_______",
+        "______#",
+        "_______"
+      ]
+    ],
+    "name": "Wallmount",
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-steel-east"
+    },
+    "code": "firearms-wallmount-0-maltiezfirearms-wallmount--metal--east"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-brass"
+    },
+    "pattern": [
+      [
+        "_______",
+        "_######",
+        "_______",
+        "_######",
+        "_______"
+      ],
+      [
+        "_______",
+        "______#",
+        "_______",
+        "______#",
+        "_______"
+      ]
+    ],
+    "name": "Wallmount",
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-brass-east"
+    },
+    "code": "firearms-wallmount-0-maltiezfirearms-wallmount--metal--east"
+  }
+]

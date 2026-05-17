@@ -1,0 +1,39 @@
+{
+  "ingredient": {
+    "type": "item",
+    "code": "game:ingot-brass"
+  },
+  "pattern": [
+    [
+      "#####_####",
+      "#####_####",
+      "#####_####"
+    ],
+    [
+      "__________",
+      "_______#_#",
+      "__________"
+    ],
+    [
+      "__________",
+      "_______#_#",
+      "__________"
+    ],
+    [
+      "__________",
+      "_______##_",
+      "__________"
+    ],
+    [
+      "__________",
+      "______##__",
+      "__________"
+    ]
+  ],
+  "name": "Flask furniture",
+  "output": {
+    "type": "item",
+    "code": "maltiezfirearms:flaskfurniture-brass"
+  },
+  "code": "firearms-flask-furniture-0-maltiezfirearms-flaskfurniture--metal"
+}

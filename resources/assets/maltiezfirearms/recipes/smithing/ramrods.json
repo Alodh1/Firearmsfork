@@ -1,0 +1,138 @@
+[
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-tinbronze"
+    },
+    "pattern": [
+      [
+        "######"
+      ]
+    ],
+    "name": "Ramrod (pistol)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-pistol-tinbronze"
+    },
+    "code": "firearms-ramrods-0-maltiezfirearms-ramrod-pistol-tinbronze"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-bismuthbronze"
+    },
+    "pattern": [
+      [
+        "######"
+      ]
+    ],
+    "name": "Ramrod (pistol)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-pistol-bismuthbronze"
+    },
+    "code": "firearms-ramrods-1-maltiezfirearms-ramrod-pistol-bismuthbronze"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-blackbronze"
+    },
+    "pattern": [
+      [
+        "######"
+      ]
+    ],
+    "name": "Ramrod (pistol)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-pistol-blackbronze"
+    },
+    "code": "firearms-ramrods-2-maltiezfirearms-ramrod-pistol-blackbronze"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "######"
+      ]
+    ],
+    "name": "Ramrod (pistol)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-pistol-steel"
+    },
+    "code": "firearms-ramrods-3-maltiezfirearms-ramrod-pistol-steel"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-iron"
+    },
+    "pattern": [
+      [
+        "########"
+      ]
+    ],
+    "name": "Ramrod (arquebus)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-arquebus-iron"
+    },
+    "code": "firearms-ramrods-4-maltiezfirearms-ramrod-arquebus-iron"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-meteoriciron"
+    },
+    "pattern": [
+      [
+        "########"
+      ]
+    ],
+    "name": "Ramrod (arquebus)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-arquebus-meteoriciron"
+    },
+    "code": "firearms-ramrods-5-maltiezfirearms-ramrod-arquebus-meteoriciron"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "############"
+      ]
+    ],
+    "name": "Ramrod (carbine)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-carbine-steel"
+    },
+    "code": "firearms-ramrods-6-maltiezfirearms-ramrod-carbine-steel"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "################"
+      ]
+    ],
+    "name": "Ramrod (musket)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:ramrod-musket-steel"
+    },
+    "code": "firearms-ramrods-7-maltiezfirearms-ramrod-musket-steel"
+  }
+]

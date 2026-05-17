@@ -1,0 +1,194 @@
+[
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-brass",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-brass",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-copper",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-copper",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-tinbronze",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-tinbronze",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-bismuthbronze",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-bismuthbronze",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-blackbronze",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-blackbronze",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-iron",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-iron",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-meteoriciron",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-meteoriciron",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  },
+  {
+    "ingredientPattern": "AC",
+    "ingredients": {
+      "A": {
+        "type": "item",
+        "code": "maltiezfirearms:flaskfurniture-steel",
+        "quantity": 1
+      },
+      "C": {
+        "type": "item",
+        "code": "game:plank-*",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:powderflask-steel",
+      "attributes": {
+        "durability": 0
+      }
+    }
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "________________",
+        "_############___",
+        "################",
+        "_############___",
+        "________________"
+      ],
+      [
+        "________________",
+        "___________##___",
+        "_____#########__",
+        "___________##___",
+        "________________"
+      ]
+    ],
+    "name": "Bayonet (socket)",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:bayonet-blade-socket"
+    },
+    "code": "firearms-bayonet-0-maltiezfirearms-bayonet-blade-socket"
+  }
+]

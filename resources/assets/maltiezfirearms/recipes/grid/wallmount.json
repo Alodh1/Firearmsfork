@@ -1,0 +1,240 @@
+[
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-iron-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-iron-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-tinbronze-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-tinbronze-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-copper-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-copper-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-steel-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-steel-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-brass-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-brass-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-rusty-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-rusty-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "AA",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmount-tarnished-east",
+        "quantity": 1
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmountdouble-tarnished-east",
+      "quantity": 1
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-iron-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-iron-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-tinbronze-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-tinbronze-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-copper-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-copper-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-steel-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-steel-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-brass-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-brass-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-rusty-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-rusty-east",
+      "quantity": 2
+    }
+  },
+  {
+    "ingredientPattern": "A",
+    "ingredients": {
+      "A": {
+        "type": "block",
+        "code": "maltiezfirearms:wallmountdouble-tarnished-east",
+        "quantity": 1
+      }
+    },
+    "width": 1,
+    "height": 1,
+    "output": {
+      "type": "block",
+      "code": "maltiezfirearms:wallmount-tarnished-east",
+      "quantity": 2
+    }
+  }
+]

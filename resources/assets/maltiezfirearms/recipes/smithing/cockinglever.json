@@ -1,0 +1,135 @@
+[
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-copper"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-copper"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-tinbronze"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-tinbronze"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-bismuthbronze"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-bismuthbronze"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-blackbronze"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-blackbronze"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-iron"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-iron"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-meteoriciron"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-meteoriciron"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  },
+  {
+    "ingredient": {
+      "type": "item",
+      "code": "game:ingot-steel"
+    },
+    "pattern": [
+      [
+        "______###_",
+        "___####_#_",
+        "_###__###_"
+      ]
+    ],
+    "name": "Cocking lever",
+    "output": {
+      "type": "item",
+      "code": "maltiezfirearms:cockinglever-steel"
+    },
+    "code": "firearms-cockinglever-0-maltiezfirearms-cockinglever--metal"
+  }
+]
