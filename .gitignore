@@ -437,3 +437,6 @@ _inspect*/
 *.rej
 *.patch
 localSettings.props
+
+# Local dependency binaries
+external/**/*.dll
