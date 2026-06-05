@@ -84,6 +84,7 @@ public class RevolverStats : WeaponStats
     public RevolverLoadStageStats[] LoadStages { get; set; } = [];
     public RevolverFiringStats FiringStats { get; set; } = new();
     public AimingStatsJson Aiming { get; set; } = new();
+    public RecoilStats Recoil { get; set; } = RecoilStats.RevolverDefaults();
 
     public string BulletWildcard { get; set; } = "*bullet-*";
     public string FlaskWildcard { get; set; } = "*powderflask-*";
@@ -152,9 +153,9 @@ public class RevolverClient : RangeWeaponClient
         FirearmsModSystem system = api.ModLoader.GetModSystem<FirearmsModSystem>();
         system.SettingsChanged += settings =>
         {
-            AimingStats.CursorType = Enum.Parse<AimingCursorType>(settings.AimingCursorType);
+            AimingStats.CursorType = Enum.Parse<AimingCursorType>(settings.AimingCursorType, ignoreCase: true);
         };
-        AimingStats.CursorType = Enum.Parse<AimingCursorType>(system.Settings.AimingCursorType);
+        AimingStats.CursorType = Enum.Parse<AimingCursorType>(system.Settings.AimingCursorType, ignoreCase: true);
 
         //DebugWidgets.FloatDrag("test", "test", $"{item.Code}-followX", () => AimingStats.AnimationFollowX, (value) => AimingStats.AnimationFollowX = value);
         //DebugWidgets.FloatDrag("test", "test", $"{item.Code}-followY", () => AimingStats.AnimationFollowY, (value) => AimingStats.AnimationFollowY = value);
@@ -196,6 +197,7 @@ public class RevolverClient : RangeWeaponClient
             case RevolverState.Loading:
             case RevolverState.FinishLoading:
             case RevolverState.Cocking:
+                ReloadActionId++;
                 RangedWeaponSystem.SendStatusChange(player, RangedWeaponStatus.EndLoading, mainHand);
                 break;
             case RevolverState.Aim:
@@ -225,6 +227,8 @@ public class RevolverClient : RangeWeaponClient
     protected readonly RevolverStats Stats;
     protected readonly AimingStats AimingStats;
     protected long LastRecoilTimestampMs = -1000;
+    protected long NextShotAllowedMainHandMs = 0;
+    protected long NextShotAllowedOffHandMs = 0;
     protected readonly ItemInventoryBuffer Inventory = new();
     protected readonly ModelTransform BulletTransform;
     protected readonly ModelTransform FlaskTransform;
@@ -241,8 +245,10 @@ public class RevolverClient : RangeWeaponClient
     protected const string LockAnimationCategory = "lock";
     protected const string CylinderPositionAnimationCategory = "cylinder-position";
     protected const string CylinderLoadGatesAnimationCategory = "cylinder-load-gates";
+    protected int ReloadActionId = 0;
 
     protected ItemSlot? BulletSlot;
+    protected ItemStack? BulletAttachmentStack;
     protected int CurrentLoadStage 
     { 
         get => _currentLoadStage;
@@ -286,24 +292,28 @@ public class RevolverClient : RangeWeaponClient
             return false;
         }
 
+        int reloadActionId = ++ReloadActionId;
+
         AnimationBehavior?.StopFpAndTp(CylinderPositionAnimationCategory);
         AnimationBehavior?.PlayFpAndTp(
             mainHand,
             currentStage.StartLoadingAnimation,
             animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
             category: AnimationCategory(mainHand),
-            callback: () => StartLoadCallback(slot, player, mainHand, CurrentLoadStage));
+            callback: () => StartLoadCallback(slot, player, mainHand, CurrentLoadStage, reloadActionId));
 
         SetState(RevolverState.StartLoading, mainHand);
 
         RangedWeaponSystem.SendStatusChange(player, RangedWeaponStatus.StartLoading, mainHand);
 
-        PlayerBehavior?.SetStat("walkspeed", mainHand ? PlayerStatsMainHandCategory : PlayerStatsOffHandCategory, currentStage.LoadSpeedPenalty);
+        FirearmsReloadSafety.SetReloadWalkspeedPenalty(PlayerBehavior, mainHand, PlayerStatsMainHandCategory, PlayerStatsOffHandCategory, currentStage.LoadSpeedPenalty);
 
         return true;
     }
-    protected virtual bool StartLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage)
+    protected virtual bool StartLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage, int reloadActionId)
     {
+        if (reloadActionId != ReloadActionId || !CheckState(mainHand, RevolverState.StartLoading)) return true;
+
         RevolverLoadStageStats currentStage = Stats.LoadStages[stage];
 
         if (PlayerBehavior?.ActionListener.IsActive(EnumEntityAction.RightMouseDown) == false)
@@ -319,7 +329,7 @@ public class RevolverClient : RangeWeaponClient
                     currentStage.CancelLoadingAnimation,
                     animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
                     category: AnimationCategory(mainHand),
-                    callback: () => FinishLoadCallback(slot, player, mainHand, CurrentLoadStage));
+                    callback: () => FinishLoadCallback(slot, player, mainHand, CurrentLoadStage, reloadActionId));
 
             SetState(RevolverState.FinishLoading, mainHand);
 
@@ -342,13 +352,16 @@ public class RevolverClient : RangeWeaponClient
             nextStage.LoadingAnimation,
             animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
             category: AnimationCategory(mainHand),
-            callback: () => LoadStageCallback(slot, player, mainHand, nextStageIndex),
-            callbackHandler: code => LoadStageCallbackHandler(code, slot, player, mainHand, nextStageIndex));
+            callback: () => LoadStageCallback(slot, player, mainHand, nextStageIndex, reloadActionId),
+            callbackHandler: code => LoadStageCallbackHandler(code, slot, player, mainHand, nextStageIndex, reloadActionId));
 
         return true;
     }
-    protected virtual bool LoadStageCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage)
+    protected virtual bool LoadStageCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage, int reloadActionId)
     {
+        if (reloadActionId != ReloadActionId || !CheckState(mainHand, RevolverState.Loading)) return true;
+        if (stage == CurrentLoadStage && CurrentReadyState == RevolverReadyState.Ready) return true;
+
         RevolverLoadStageStats currentStage = Stats.LoadStages[stage];
 
         bool success = SendReloadPacket(slot, player, mainHand, stage);
@@ -362,7 +375,7 @@ public class RevolverClient : RangeWeaponClient
                 previousStage.FinishLoadingAnimation,
                 animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
                 category: AnimationCategory(mainHand),
-                callback: () => FinishLoadCallback(slot, player, mainHand, stage));
+                callback: () => FinishLoadCallback(slot, player, mainHand, stage, reloadActionId));
             AnimationBehavior?.PlayFpAndTp(
                 mainHand,
                 previousStage.LoadedAnimation,
@@ -399,7 +412,7 @@ public class RevolverClient : RangeWeaponClient
                 currentStage.FinishLoadingAnimation,
                 animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
                 category: AnimationCategory(mainHand),
-                callback: () => FinishLoadCallback(slot, player, mainHand, stage));
+                callback: () => FinishLoadCallback(slot, player, mainHand, stage, reloadActionId));
 
             SetState(RevolverState.FinishLoading, mainHand);
 
@@ -412,14 +425,16 @@ public class RevolverClient : RangeWeaponClient
             currentStage.ContinueLoadingAnimation,
             animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
             category: AnimationCategory(mainHand),
-            callback: () => ContinueLoadCallback(slot, player, mainHand, nextStageIndex));
+            callback: () => ContinueLoadCallback(slot, player, mainHand, nextStageIndex, reloadActionId));
 
-        PlayerBehavior?.SetStat("walkspeed", mainHand ? PlayerStatsMainHandCategory : PlayerStatsOffHandCategory, nextStage.LoadSpeedPenalty);
+        FirearmsReloadSafety.SetReloadWalkspeedPenalty(PlayerBehavior, mainHand, PlayerStatsMainHandCategory, PlayerStatsOffHandCategory, nextStage.LoadSpeedPenalty);
 
         return true;
     }
-    protected virtual bool ContinueLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage)
+    protected virtual bool ContinueLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage, int reloadActionId)
     {
+        if (reloadActionId != ReloadActionId || !CheckState(mainHand, RevolverState.Loading)) return true;
+
         Debug.WriteLine($"ContinueLoad ({CurrentLoadStage}|{CurrentReadyState})");
 
         RevolverLoadStageStats currentStage = Stats.LoadStages[stage];
@@ -429,18 +444,21 @@ public class RevolverClient : RangeWeaponClient
             currentStage.LoadingAnimation,
             animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
             category: AnimationCategory(mainHand),
-            callback: () => LoadStageCallback(slot, player, mainHand, stage),
-            callbackHandler: code => LoadStageCallbackHandler(code, slot, player, mainHand, stage));
+            callback: () => LoadStageCallback(slot, player, mainHand, stage, reloadActionId),
+            callbackHandler: code => LoadStageCallbackHandler(code, slot, player, mainHand, stage, reloadActionId));
 
         return true;
     }
-    protected virtual void LoadStageCallbackHandler(string code, ItemSlot slot, EntityPlayer player, bool mainHand, int stage)
+    protected virtual void LoadStageCallbackHandler(string code, ItemSlot slot, EntityPlayer player, bool mainHand, int stage, int reloadActionId)
     {
+        if (reloadActionId != ReloadActionId || !CheckState(mainHand, RevolverState.Loading)) return;
+
         switch (code)
         {
             case "attach":
                 {
-                    if (BulletSlot != null) Attachable.SetAttachment(player.EntityId, "bullet", BulletSlot.Itemstack, BulletTransform);
+                    ItemStack? bulletAttachment = GetBulletAttachmentStack();
+                    if (bulletAttachment != null) Attachable.SetAttachment(player.EntityId, "bullet", bulletAttachment, BulletTransform);
 
                     ItemSlot? flaskSlot = null;
                     player.WalkInventory(slot =>
@@ -480,9 +498,9 @@ public class RevolverClient : RangeWeaponClient
                 break;
         }
     }
-    protected virtual bool FinishLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage)
+    protected virtual bool FinishLoadCallback(ItemSlot slot, EntityPlayer player, bool mainHand, int stage, int reloadActionId)
     {
-        if (!CheckState(mainHand, RevolverState.FinishLoading)) return true;
+        if (reloadActionId != ReloadActionId || !CheckState(mainHand, RevolverState.FinishLoading)) return true;
 
         Debug.WriteLine($"FinishLoad ({CurrentLoadStage}|{CurrentReadyState})");
 
@@ -542,6 +560,7 @@ public class RevolverClient : RangeWeaponClient
         Debug.WriteLine($"CancelLoading ({CurrentLoadStage}|{CurrentReadyState})");
 
         RevolverLoadStageStats currentStage = Stats.LoadStages[CurrentLoadStage];
+        int reloadActionId = ReloadActionId;
 
         AnimationBehavior?.PlayFpAndTp(
                 mainHand,
@@ -554,7 +573,7 @@ public class RevolverClient : RangeWeaponClient
                 currentStage.CancelLoadingAnimation,
                 animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
                 category: AnimationCategory(mainHand),
-                callback: () => FinishLoadCallback(slot, player, mainHand, CurrentLoadStage));
+                callback: () => FinishLoadCallback(slot, player, mainHand, CurrentLoadStage, reloadActionId));
 
         SetState(RevolverState.FinishLoading, mainHand);
 
@@ -610,10 +629,16 @@ public class RevolverClient : RangeWeaponClient
         return false;
     }
 
+    protected bool ShouldContinueAutomaticFire(bool mainHand) =>
+        Stats.AutomaticFire &&
+        PlayerBehavior?.ActionListener.IsActive(EnumEntityAction.LeftMouseDown) == true &&
+        PlayerBehavior?.ActionListener.IsActive(EnumEntityAction.RightMouseDown) == true;
+
     protected virtual bool TryShoot(ItemSlot slot, EntityPlayer player, ref int state, ActionEventData eventData, bool mainHand)
     {
         if (CurrentReadyState != RevolverReadyState.Ready) return false;
         if (!CheckState(state, RevolverState.Aim) || !mainHand) return false;
+        if (!ShotGateOpen(mainHand)) return false;
         if (InteractionsTester.PlayerTriesToInteract(player, mainHand, eventData)) return false;
         if (eventData.AltPressed || !CheckForOtherHandEmpty(mainHand, player)) return false;
 
@@ -630,6 +655,7 @@ public class RevolverClient : RangeWeaponClient
         Debug.WriteLine($"Shoot ({CurrentLoadStage}|{CurrentReadyState})");
 
         RangedWeaponSystem.SendStatusChange(player, RangedWeaponStatus.TriggeredShot, mainHand);
+        SetNextShotAllowed(mainHand, Api.World.ElapsedMilliseconds + GetActionDelayMs(player, currentStage.ShootAnimation, GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack), 500));
 
         AnimationBehavior?.PlayFpAndTp(
                 mainHand,
@@ -648,6 +674,63 @@ public class RevolverClient : RangeWeaponClient
 
         return true;
     }
+
+    protected virtual bool TryShootAutomaticContinuation(ItemSlot slot, EntityPlayer player, bool mainHand)
+    {
+        if (CurrentReadyState != RevolverReadyState.Ready) return false;
+        if (!CheckState(mainHand, RevolverState.Aim) || !mainHand) return false;
+        if (!ShotGateOpen(mainHand)) return false;
+        if (!CheckForOtherHandEmpty(mainHand, player)) return false;
+
+        RevolverLoadStageStats currentStage = Stats.LoadStages[CurrentLoadStage];
+
+        if (!currentStage.CanFire) return false;
+
+        SetState(RevolverState.Shoot, mainHand);
+
+        CurrentReadyState = RevolverReadyState.Fired;
+
+        SendWeaponState(CurrentLoadStage, RevolverReadyState.Fired, slot, player, mainHand);
+
+        Debug.WriteLine($"Shoot ({CurrentLoadStage}|{CurrentReadyState})");
+
+        RangedWeaponSystem.SendStatusChange(player, RangedWeaponStatus.TriggeredShot, mainHand);
+        SetNextShotAllowed(mainHand, Api.World.ElapsedMilliseconds + GetActionDelayMs(player, currentStage.ShootAnimation, GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack), 500));
+
+        AnimationBehavior?.PlayFpAndTp(
+                mainHand,
+                currentStage.UnloadedAnimation,
+                category: CylinderLoadGatesAnimationCategory,
+                weight: 1.1f);
+        AnimationBehavior?.StopFpAndTp(CylinderPositionAnimationCategory);
+        AnimationBehavior?.StopFpAndTp(LockAnimationCategory);
+
+        AnimationBehavior?.PlayFpAndTp(
+            mainHand,
+            currentStage.ShootAnimation,
+            category: AnimationCategory(mainHand),
+            callback: () => ShootCallback(slot, player, mainHand),
+            callbackHandler: callback => ShootAnimationCallback(callback, slot, player, mainHand, CurrentLoadStage));
+
+        return true;
+    }
+
+    protected bool ShotGateOpen(bool mainHand) => Api.World.ElapsedMilliseconds >= GetNextShotAllowed(mainHand);
+
+    protected long GetNextShotAllowed(bool mainHand) => mainHand ? NextShotAllowedMainHandMs : NextShotAllowedOffHandMs;
+
+    protected void SetNextShotAllowed(bool mainHand, long value)
+    {
+        if (mainHand)
+        {
+            NextShotAllowedMainHandMs = value;
+        }
+        else
+        {
+            NextShotAllowedOffHandMs = value;
+        }
+    }
+
     protected virtual bool ShootCallback(ItemSlot slot, EntityPlayer player, bool mainHand)
     {
         RevolverLoadStageStats currentStage = Stats.LoadStages[CurrentLoadStage];
@@ -669,6 +752,11 @@ public class RevolverClient : RangeWeaponClient
         }
 
         SetState(RevolverState.Aim, mainHand);
+
+        if (ShouldContinueAutomaticFire(mainHand) && TryCockAutomaticContinuation(slot, player, mainHand))
+        {
+            return true;
+        }
 
         AnimationBehavior?.PlayFpAndTp(
             mainHand,
@@ -702,12 +790,15 @@ public class RevolverClient : RangeWeaponClient
         if (now - LastRecoilTimestampMs < 80) return;
         LastRecoilTimestampMs = now;
 
-        float estimatedDamage = EstimateShotDamage(slot, stage);
-        float verticalDeg = Math.Clamp(2.0f + estimatedDamage * 0.35f, 3.0f, 10.0f);
-        float horizontalDeg = Math.Clamp(verticalDeg * 0.15f, 0.3f, 1.5f);
+        RecoilStats recoil = Stats.Recoil ?? RecoilStats.RevolverDefaults();
+        if (!recoil.Enabled) return;
 
-        FirearmsRecoilSystem.AddRecoil(verticalDeg, horizontalDeg);
-        Api.World.AddCameraShake(Math.Clamp(0.0016f + estimatedDamage * 0.000035f, 0.0016f, 0.0035f));
+        float estimatedDamage = EstimateShotDamage(slot, stage);
+        float verticalDeg = recoil.VerticalDegrees(estimatedDamage);
+        float horizontalDeg = recoil.HorizontalDegrees(estimatedDamage, verticalDeg);
+
+        FirearmsRecoilSystem.AddRecoil(verticalDeg, horizontalDeg, recoil);
+        Api.World.AddCameraShake(recoil.CameraShake(estimatedDamage));
     }
 
     protected virtual float EstimateShotDamage(ItemSlot slot, int stage)
@@ -765,6 +856,34 @@ public class RevolverClient : RangeWeaponClient
 
         return true;
     }
+
+    protected virtual bool TryCockAutomaticContinuation(ItemSlot slot, EntityPlayer player, bool mainHand)
+    {
+        if (CurrentReadyState != RevolverReadyState.Fired) return false;
+        if (!CheckState(mainHand, RevolverState.Aim) || !mainHand) return false;
+        if (!CheckForOtherHandEmpty(mainHand, player)) return false;
+
+        Debug.WriteLine($"Cock ({CurrentLoadStage}|{CurrentReadyState})");
+
+        RevolverLoadStageStats currentStage = Stats.LoadStages[CurrentLoadStage];
+
+        SetState(RevolverState.Cocking, mainHand);
+
+        AnimationBehavior?.StopFpAndTp(CylinderPositionAnimationCategory);
+        AnimationBehavior?.StopFpAndTp(LockAnimationCategory);
+        AnimationBehavior?.PlayFpAndTp(
+            mainHand,
+            currentStage.CockingAnimation,
+            animationSpeed: GetAnimationSpeed(player, Stats.ProficiencyStat, slot.Itemstack),
+            category: AnimationCategory(mainHand),
+            callback: () => CockCallback(slot, player, mainHand));
+
+        AimingSystem.StopAiming();
+        AimingAnimationController?.Stop(mainHand);
+
+        return true;
+    }
+
     protected virtual bool CockCallback(ItemSlot slot, EntityPlayer player, bool mainHand)
     {
         SetState(RevolverState.Aim, mainHand);
@@ -798,15 +917,20 @@ public class RevolverClient : RangeWeaponClient
             return true;
         }
 
+        AimingSystem.StartAiming(GetAimStats(slot));
+        AimingSystem.AimingState = WeaponAimingState.FullCharge;
+        AimingAnimationController?.Play(mainHand);
+
+        if (ShouldContinueAutomaticFire(mainHand) && TryShootAutomaticContinuation(slot, player, mainHand))
+        {
+            return true;
+        }
+
         AnimationBehavior?.PlayFpAndTp(
             mainHand,
             nextStage.AimAnimation,
             category: AnimationCategory(mainHand),
             callback: () => AimCallback(slot, player, mainHand, CurrentLoadStage));
-
-        AimingSystem.StartAiming(GetAimStats(slot));
-        AimingSystem.AimingState = WeaponAimingState.FullCharge;
-        AimingAnimationController?.Play(mainHand);
 
         return true;
     }
@@ -838,9 +962,10 @@ public class RevolverClient : RangeWeaponClient
         if (ammoSlot == null) return true;
 
         int bulletItemsRequired = FirearmsAmmoUtility.BulletItemsRequired(currentStage.BulletLoaded, Stats.BulletsLoadedPerBulletItem);
-        ammoSlot.TakeOut(bulletItemsRequired);
+        int expectedStage = CurrentLoadStage;
+        RevolverReadyState expectedReadyState = CurrentReadyState;
 
-        RangedWeaponSystem.Reload(slot, ammoSlot, bulletItemsRequired, mainHand, success => LoadServerCallback(success, stage, mainHand, player), data: [(byte)stage, (byte)RevolverReadyState.Ready]);
+        RangedWeaponSystem.Reload(slot, ammoSlot, bulletItemsRequired, mainHand, success => LoadServerCallback(success, stage, mainHand, player), data: [(byte)stage, (byte)RevolverReadyState.Ready, (byte)expectedStage, (byte)expectedReadyState]);
 
         return true;
     }
@@ -1001,8 +1126,28 @@ public class RevolverClient : RangeWeaponClient
         }
 
         BulletSlot = ammoSlot;
+        BulletAttachmentStack = CreateAttachmentStack(ammoSlot.Itemstack);
 
         return true;
+    }
+    protected ItemStack? GetBulletAttachmentStack()
+    {
+        if (BulletSlot?.Itemstack?.Item != null &&
+            BulletSlot.Itemstack.Item.GetCollectibleBehavior<ProjectileBehavior>(true) != null &&
+            WildcardUtil.Match(Stats.BulletWildcard, BulletSlot.Itemstack.Item.Code.ToString()))
+        {
+            BulletAttachmentStack = CreateAttachmentStack(BulletSlot.Itemstack);
+        }
+
+        return BulletAttachmentStack?.Clone();
+    }
+    protected static ItemStack? CreateAttachmentStack(ItemStack? stack)
+    {
+        if (stack?.Item == null) return null;
+
+        ItemStack attachment = stack.Clone();
+        attachment.StackSize = 1;
+        return attachment;
     }
     protected ItemSlot? GetAmmoSlot(EntityPlayer player, int amount)
     {
@@ -1099,7 +1244,7 @@ public class RevolverClient : RangeWeaponClient
     protected float GetAnimationSpeed(EntityPlayer player, string stat, ItemStack stack)
     {
         ItemStackRangedStats stackStats = ItemStackRangedStats.FromItemStack(stack);
-        return GetAnimationSpeed(player, stat) * stackStats.ReloadSpeed * Stats.ReloadAnimationSpeed;
+        return FirearmsReloadSafety.AnimationSpeed(GetAnimationSpeed(player, stat) * stackStats.ReloadSpeed * Stats.ReloadAnimationSpeed);
     }
 }
 
@@ -1118,6 +1263,24 @@ public class RevolverServer : RangeWeaponServer
 
         int stage = packet.Data[0];
         RevolverReadyState state = (RevolverReadyState)packet.Data[1];
+
+        if (stage < 0 || stage >= Stats.LoadStages.Length) return false;
+
+        if (packet.Amount > 0)
+        {
+            if (ammoSlot == null || packet.Data.Length < 4) return false;
+
+            int expectedStage = packet.Data[2];
+            RevolverReadyState expectedReadyState = (RevolverReadyState)packet.Data[3];
+
+            int actualStage = slot.Itemstack?.Attributes.GetAsInt(LoadingStageAttribute, 0) ?? 0;
+            RevolverReadyState actualReadyState = (RevolverReadyState)(slot.Itemstack?.Attributes.GetAsInt(WeaponReadyStageAttribute, 0) ?? 0);
+
+            if (actualStage != expectedStage || actualReadyState != expectedReadyState)
+            {
+                return false;
+            }
+        }
 
         if (packet.Amount <= 0)
         {
@@ -1154,6 +1317,7 @@ public class RevolverServer : RangeWeaponServer
             }
             else
             {
+                Inventory.Clear();
                 return false;
             }
         }

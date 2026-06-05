@@ -102,6 +102,8 @@
   "setting-powder_to_flask_ratio": "Flask durability from powder item",
   "setting-trait": "Tinkerer trait required",
   "setting-cursortype": "Aiming cursor type",
+  "setting-enable_bullet_trails": "Bullet trails",
+  "setting-comment-enable_bullet_trails": "Client-side visual only. Applied instantly.",
   "setting-aiming_difficulty": "Aiming difficulty",
   "setting-blunderbuss_spread": "Blunderbuss spread (MOA)",
   "setting-firearms_spread": "Firearms spread multiplier",

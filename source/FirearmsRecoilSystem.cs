@@ -5,27 +5,87 @@ using Vintagestory.Client.NoObf;
 
 namespace Firearms;
 
+public class RecoilStats
+{
+    public bool Enabled { get; set; } = true;
+    public float Strength { get; set; } = 1f;
+    public float VerticalBaseDeg { get; set; } = 2.5f;
+    public float VerticalDamageScaleDeg { get; set; } = 0.45f;
+    public float VerticalMinDeg { get; set; } = 4f;
+    public float VerticalMaxDeg { get; set; } = 12f;
+    public float HorizontalBaseDeg { get; set; } = 0f;
+    public float HorizontalVerticalScale { get; set; } = 0.15f;
+    public float HorizontalDamageScaleDeg { get; set; } = 0f;
+    public float HorizontalMinDeg { get; set; } = 0.35f;
+    public float HorizontalMaxDeg { get; set; } = 1.8f;
+    public float RiseDurationSec { get; set; } = 0.18f;
+    public bool SpringBack { get; set; } = true;
+    public float SpringBackFraction { get; set; } = 0.28f;
+    public float SpringBackDelaySec { get; set; } = 0.04f;
+    public float SpringBackDurationSec { get; set; } = 0.55f;
+    public float MaxQueuedVerticalDeg { get; set; } = 18f;
+    public float MaxQueuedHorizontalDeg { get; set; } = 3f;
+    public int MinIntervalMs { get; set; } = 80;
+    public float CameraShakeBase { get; set; } = 0.0018f;
+    public float CameraShakeDamageScale { get; set; } = 0.00004f;
+    public float CameraShakeMin { get; set; } = 0.0018f;
+    public float CameraShakeMax { get; set; } = 0.004f;
+
+    public static RecoilStats MuzzleloaderDefaults() => new();
+
+    public static RecoilStats RevolverDefaults() => new()
+    {
+        VerticalBaseDeg = 2f,
+        VerticalDamageScaleDeg = 0.35f,
+        VerticalMinDeg = 3f,
+        VerticalMaxDeg = 10f,
+        HorizontalMinDeg = 0.3f,
+        HorizontalMaxDeg = 1.5f,
+        CameraShakeBase = 0.0016f,
+        CameraShakeDamageScale = 0.000035f,
+        CameraShakeMin = 0.0016f,
+        CameraShakeMax = 0.0035f
+    };
+
+    public float VerticalDegrees(float estimatedDamage)
+    {
+        float vertical = VerticalBaseDeg + estimatedDamage * VerticalDamageScaleDeg;
+        vertical = GameMath.Clamp(vertical, Math.Min(VerticalMinDeg, VerticalMaxDeg), Math.Max(VerticalMinDeg, VerticalMaxDeg));
+        return Math.Max(0f, vertical * Strength);
+    }
+
+    public float HorizontalDegrees(float estimatedDamage, float verticalDeg)
+    {
+        float horizontal = HorizontalBaseDeg + verticalDeg * HorizontalVerticalScale + estimatedDamage * HorizontalDamageScaleDeg;
+        horizontal = GameMath.Clamp(horizontal, Math.Min(HorizontalMinDeg, HorizontalMaxDeg), Math.Max(HorizontalMinDeg, HorizontalMaxDeg));
+        return Math.Max(0f, horizontal * Strength);
+    }
+
+    public float CameraShake(float estimatedDamage)
+    {
+        float shake = CameraShakeBase + estimatedDamage * CameraShakeDamageScale;
+        return GameMath.Clamp(shake, Math.Min(CameraShakeMin, CameraShakeMax), Math.Max(CameraShakeMin, CameraShakeMax));
+    }
+}
+
 internal static class FirearmsRecoilSystem
 {
     private const string HarmonyId = "firearmsfork.recoil";
-    private const float ReturnStrength = 13f;
-    private const float Damping = 8f;
-    private const float MinPitchOffset = -18f * GameMath.DEG2RAD;
-    private const float MaxPitchOffset = 3f * GameMath.DEG2RAD;
-    private const float MinYawOffset = -3f * GameMath.DEG2RAD;
-    private const float MaxYawOffset = 3f * GameMath.DEG2RAD;
     private const float MinCameraPitch = 1.5857964f;
     private const float MaxCameraPitch = 4.697389f;
     private static readonly Random Random = new();
 
     private static Harmony? _harmony;
     private static ICoreClientAPI? _api;
-    private static float _recoilPitchOffset;
-    private static float _recoilYawOffset;
-    private static float _appliedPitchOffset;
-    private static float _appliedYawOffset;
-    private static float _recoilPitchVelocity;
-    private static float _recoilYawVelocity;
+    private static float _pendingPitchKick;
+    private static float _pendingYawKick;
+    private static float _pendingPitchRecovery;
+    private static float _pendingYawRecovery;
+    private static float _recoveryDelayRemaining;
+    private static float _riseDuration = 0.18f;
+    private static float _recoveryDuration = 0.55f;
+    private static float _maxPendingPitchKick = 18f * GameMath.DEG2RAD;
+    private static float _maxPendingYawKick = 3f * GameMath.DEG2RAD;
     private static long _lastRecoilMs = -1000;
 
     public static void Start(ICoreClientAPI api)
@@ -42,33 +102,45 @@ internal static class FirearmsRecoilSystem
         _harmony?.UnpatchAll(HarmonyId);
         _harmony = null;
         _api = null;
-        _recoilPitchOffset = 0;
-        _recoilYawOffset = 0;
-        _appliedPitchOffset = 0;
-        _appliedYawOffset = 0;
-        _recoilPitchVelocity = 0;
-        _recoilYawVelocity = 0;
+        _pendingPitchKick = 0;
+        _pendingYawKick = 0;
+        _pendingPitchRecovery = 0;
+        _pendingYawRecovery = 0;
+        _recoveryDelayRemaining = 0;
+        _riseDuration = 0.18f;
+        _recoveryDuration = 0.55f;
+        _maxPendingPitchKick = 18f * GameMath.DEG2RAD;
+        _maxPendingYawKick = 3f * GameMath.DEG2RAD;
     }
 
-    public static void AddRecoil(float verticalDeg, float horizontalDeg)
+    public static void AddRecoil(float verticalDeg, float horizontalDeg, RecoilStats recoil)
     {
-        if (_api == null) return;
+        if (_api == null || !recoil.Enabled) return;
 
         long now = _api.World.ElapsedMilliseconds;
-        if (now - _lastRecoilMs < 40) return;
+        if (now - _lastRecoilMs < Math.Max(0, recoil.MinIntervalMs)) return;
         _lastRecoilMs = now;
 
-        float vertical = GameMath.Clamp(verticalDeg, 0f, 12f) * GameMath.DEG2RAD;
-        float horizontal = GameMath.Clamp(horizontalDeg, 0f, 1.8f) * GameMath.DEG2RAD;
+        _riseDuration = Math.Max(0.001f, recoil.RiseDurationSec);
+        _recoveryDuration = Math.Max(0.001f, recoil.SpringBackDurationSec);
+        _maxPendingPitchKick = Math.Max(0.1f, recoil.MaxQueuedVerticalDeg) * GameMath.DEG2RAD;
+        _maxPendingYawKick = Math.Max(0.1f, recoil.MaxQueuedHorizontalDeg) * GameMath.DEG2RAD;
+
+        float vertical = Math.Max(0f, verticalDeg) * GameMath.DEG2RAD;
+        float horizontal = Math.Max(0f, horizontalDeg) * GameMath.DEG2RAD;
 
         // In Vintage Story's pitch convention, lower pitch raises the camera.
         float yawImpulse = ((float)Random.NextDouble() * 2f - 1f) * horizontal;
-        _recoilPitchOffset = GameMath.Clamp(_recoilPitchOffset - vertical, MinPitchOffset, MaxPitchOffset);
-        _recoilYawOffset = GameMath.Clamp(_recoilYawOffset + yawImpulse, MinYawOffset, MaxYawOffset);
+        _pendingPitchKick = GameMath.Clamp(_pendingPitchKick - vertical, -_maxPendingPitchKick, _maxPendingPitchKick);
+        _pendingYawKick = GameMath.Clamp(_pendingYawKick + yawImpulse, -_maxPendingYawKick, _maxPendingYawKick);
 
-        // A small velocity tail keeps the motion from looking like a hard snap, but the visible impulse is the offset above.
-        _recoilPitchVelocity -= vertical * 2f;
-        _recoilYawVelocity += yawImpulse * 2f;
+        if (recoil.SpringBack && recoil.SpringBackFraction > 0f)
+        {
+            float springBackFraction = Math.Max(0f, recoil.SpringBackFraction);
+            _pendingPitchRecovery = GameMath.Clamp(_pendingPitchRecovery + vertical * springBackFraction, -_maxPendingPitchKick, _maxPendingPitchKick);
+            _pendingYawRecovery = GameMath.Clamp(_pendingYawRecovery - yawImpulse * springBackFraction, -_maxPendingYawKick, _maxPendingYawKick);
+            _recoveryDelayRemaining = Math.Max(_recoveryDelayRemaining, Math.Max(0f, recoil.SpringBackDelaySec));
+        }
     }
 
     private static void UpdateCameraYawPitchPostfix(ClientMain __instance, float dt, ref float ___mousePitch, ref float ___mouseYaw)
@@ -78,19 +150,18 @@ internal static class FirearmsRecoilSystem
         dt = GameMath.Clamp(dt, 0f, 0.1f);
         if (dt <= 0) return;
 
-        _recoilPitchVelocity -= _recoilPitchOffset * ReturnStrength * dt;
-        _recoilPitchVelocity -= _recoilPitchVelocity * Damping * dt;
-        _recoilYawVelocity -= _recoilYawOffset * ReturnStrength * dt;
-        _recoilYawVelocity -= _recoilYawVelocity * Damping * dt;
+        float pitchDelta = ConsumeKick(ref _pendingPitchKick, dt, _riseDuration);
+        float yawDelta = ConsumeKick(ref _pendingYawKick, dt, _riseDuration);
 
-        _recoilPitchOffset += _recoilPitchVelocity * dt;
-        _recoilYawOffset += _recoilYawVelocity * dt;
-
-        _recoilPitchOffset = GameMath.Clamp(_recoilPitchOffset, MinPitchOffset, MaxPitchOffset);
-        _recoilYawOffset = GameMath.Clamp(_recoilYawOffset, MinYawOffset, MaxYawOffset);
-
-        float pitchDelta = _recoilPitchOffset - _appliedPitchOffset;
-        float yawDelta = _recoilYawOffset - _appliedYawOffset;
+        if (Math.Abs(_pendingPitchKick) < 0.0005f && Math.Abs(_pendingYawKick) < 0.0005f)
+        {
+            _recoveryDelayRemaining = Math.Max(0f, _recoveryDelayRemaining - dt);
+            if (_recoveryDelayRemaining <= 0f)
+            {
+                pitchDelta += ConsumeKick(ref _pendingPitchRecovery, dt, _recoveryDuration);
+                yawDelta += ConsumeKick(ref _pendingYawRecovery, dt, _recoveryDuration);
+            }
+        }
 
         if (Math.Abs(pitchDelta) < 0.000001f && Math.Abs(yawDelta) < 0.000001f) return;
 
@@ -99,7 +170,17 @@ internal static class FirearmsRecoilSystem
 
         ___mousePitch = __instance.EntityPlayer.Pos.Pitch;
         ___mouseYaw = __instance.EntityPlayer.Pos.Yaw;
-        _appliedPitchOffset = _recoilPitchOffset;
-        _appliedYawOffset = _recoilYawOffset;
+    }
+
+    private static float ConsumeKick(ref float pendingKick, float dt, float duration)
+    {
+        float absPending = Math.Abs(pendingKick);
+        if (absPending < 0.000001f) return 0f;
+
+        // Apply the kick over a short rise window instead of snapping the full recoil in one frame.
+        float step = Math.Min(absPending, absPending * dt / duration);
+        float delta = MathF.CopySign(step, pendingKick);
+        pendingKick -= delta;
+        return delta;
     }
 }

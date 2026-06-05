@@ -40,6 +40,121 @@ public enum MusketLoadingStage
     DetachBayonet
 }
 
+internal static class FirearmRenderVariantUtil
+{
+    private const string BayonetInventoryId = "bayonet";
+    private static readonly string[] BayonetVariantSuffixes = ["plug-plain", "plug-decorated", "socket-plain", "socket-decorated", "plain", "decorated"];
+
+    public static bool TryGetBayonetRenderVariant(ItemStack firearm, ItemStack bayonet, out int renderVariant)
+    {
+        renderVariant = GetBayonetRenderVariantCandidate(bayonet);
+        if (IsValidRenderVariant(firearm, renderVariant)) return true;
+
+        if (TryResolveBayonetRenderVariantFromAlternates(firearm, bayonet, out renderVariant)) return true;
+
+        renderVariant = 0;
+        return false;
+    }
+
+    public static bool SanitizeRenderVariant(ItemStack? stack)
+    {
+        if (stack?.Collectible == null || !stack.Attributes.HasAttribute("renderVariant")) return false;
+
+        int renderVariant = stack.Attributes.GetInt("renderVariant", 0);
+        if (IsValidRenderVariant(stack, renderVariant)) return false;
+
+        stack.Attributes.RemoveAttribute("renderVariant");
+        return true;
+    }
+
+    public static bool SanitizeRenderVariant(ItemSlot? slot)
+    {
+        ItemStack? stack = slot?.Itemstack;
+        if (stack?.Collectible == null || !stack.Attributes.HasAttribute("renderVariant")) return false;
+
+        int renderVariant = stack.Attributes.GetInt("renderVariant", 0);
+        if (IsValidRenderVariant(stack, renderVariant)) return false;
+
+        if (stack.Item is MusketItem && slot != null)
+        {
+            ItemInventoryBuffer bayonetInventory = new();
+            bayonetInventory.Read(slot, BayonetInventoryId);
+            try
+            {
+                if (bayonetInventory.Items.Count > 0 && TryGetBayonetRenderVariant(stack, bayonetInventory.Items[0], out int repairedRenderVariant))
+                {
+                    stack.Attributes.SetInt("renderVariant", repairedRenderVariant);
+                    return true;
+                }
+            }
+            finally
+            {
+                bayonetInventory.Clear();
+            }
+        }
+
+        stack.Attributes.RemoveAttribute("renderVariant");
+        return true;
+    }
+
+    public static bool IsValidRenderVariant(ItemStack stack, int renderVariant)
+    {
+        if (renderVariant < 2) return true;
+
+        int alternateIndex = renderVariant - 2;
+        return alternateIndex >= 0 && (stack.Item?.Shape?.Alternates?.Length ?? 0) > alternateIndex;
+    }
+
+    private static int GetBayonetRenderVariantCandidate(ItemStack bayonet)
+    {
+        string path = bayonet.Collectible?.Code?.Path ?? bayonet.Item?.Code?.Path ?? "";
+        string code = bayonet.Collectible?.Code?.ToString() ?? bayonet.Item?.Code?.ToString() ?? path;
+
+        Dictionary<string, int>? renderVariantByType = bayonet.Collectible?.Attributes?["musketRenderVariantByType"].AsObject<Dictionary<string, int>>();
+        if (renderVariantByType != null)
+        {
+            foreach ((string wildcard, int renderVariant) in renderVariantByType)
+            {
+                if (WildcardUtil.Match(wildcard, path) || WildcardUtil.Match(wildcard, code))
+                {
+                    return Math.Max(0, renderVariant);
+                }
+            }
+        }
+
+        if (WildcardUtil.Match("*-plug-plain", path)) return 2;
+        if (WildcardUtil.Match("*-plug-decorated", path)) return 3;
+        if (WildcardUtil.Match("*-socket-plain", path)) return 4;
+        if (WildcardUtil.Match("*-socket-decorated", path)) return 5;
+
+        return 0;
+    }
+
+    private static bool TryResolveBayonetRenderVariantFromAlternates(ItemStack firearm, ItemStack bayonet, out int renderVariant)
+    {
+        renderVariant = 0;
+
+        string bayonetPath = bayonet.Collectible?.Code?.Path ?? bayonet.Item?.Code?.Path ?? "";
+        string suffix = BayonetVariantSuffixes.FirstOrDefault(element => bayonetPath.Contains(element, StringComparison.OrdinalIgnoreCase)) ?? "";
+        if (suffix == "") return false;
+
+        CompositeShape[]? alternates = firearm.Item?.Shape?.Alternates;
+        if (alternates == null || alternates.Length == 0) return false;
+
+        for (int index = 0; index < alternates.Length; index++)
+        {
+            string alternatePath = alternates[index].Base?.Path ?? alternates[index].Base?.ToString() ?? "";
+            if (alternatePath.Contains(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                renderVariant = index + 2;
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 public class MusketStats
 {
     public string BayonetWildcard { get; set; } = "*bayonet-*";
@@ -91,20 +206,20 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
     [HotkeyEventHandler("attach-bayonet", "maltiezfirearms:attach-bayonet", GlKeys.B)]
     protected virtual bool Bayonet(ItemSlot slot, EntityPlayer player, ref int state, KeyCombination keyCombination, bool mainHand, AttackDirection direction)
     {
-        if (player.RightHandItemSlot?.Itemstack?.Item is not MusketItem) return false;
+        if (slot.Itemstack?.Item is not MusketItem) return false;
 
-        BayonetInventory.Read(player.RightHandItemSlot, BayonetInventoryId);
+        BayonetInventory.Read(slot, BayonetInventoryId);
         if (BayonetInventory.Items.Count == 0)
         {
             if (!WildcardUtil.Match(StatsMusket.BayonetWildcard, player.LeftHandItemSlot.Itemstack?.Item?.Code?.ToString() ?? "")) return false;
 
-            RangedWeaponSystem.Reload(player.RightHandItemSlot, player.LeftHandItemSlot, 1, true, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.AttachBayonet));
+            RangedWeaponSystem.Reload(slot, player.LeftHandItemSlot, 1, mainHand, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.AttachBayonet));
 
             BayonetInventory.Clear();
         }
         else
         {
-            RangedWeaponSystem.Reload(player.RightHandItemSlot, player.LeftHandItemSlot, 1, true, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.DetachBayonet));
+            RangedWeaponSystem.Reload(slot, player.LeftHandItemSlot, 1, mainHand, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.DetachBayonet));
             BayonetInventory.Clear();
         }
 
@@ -122,7 +237,7 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
         if (CheckState(state, MusketState.Loading, MusketState.Aim, MusketState.Priming, MusketState.Shoot)) return false;
         if (CheckState(state, MusketState.AttackWindup, MusketState.Attack, MusketState.Cooldown)) return false;
 
-        BayonetInventory.Read(player.RightHandItemSlot, BayonetInventoryId);
+        BayonetInventory.Read(slot, BayonetInventoryId);
         if (!BayonetInventory.Items.Any())
         {
             BayonetInventory.Clear();
@@ -130,7 +245,7 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
         }
         BayonetInventory.Clear();
 
-        SetState(MeleeWeaponState.WindingUp, mainHand);
+        SetState(MusketState.AttackWindup, mainHand);
         BayonetAttack.Start(player.Player);
         AnimationBehavior?.Play(
             mainHand,
@@ -152,6 +267,7 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
     protected virtual void TryAttack(MeleeAttack attack, ItemSlot slot, EntityPlayer player, bool mainHand)
     {
         ItemStackMeleeWeaponStats stackStats;
+        bool hasBayonet = false;
         BayonetInventory.Read(slot, BayonetInventoryId);
         if (!BayonetInventory.Items.Any())
         {
@@ -161,6 +277,7 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
         {
             ItemStack bayonetStack = BayonetInventory.Items[0];
             stackStats = ItemStackMeleeWeaponStats.FromItemStack(bayonetStack);
+            hasBayonet = true;
         }
         BayonetInventory.Clear();
 
@@ -170,12 +287,13 @@ public class MusketClient : MuzzleloaderClient, IOnGameTick
             mainHand,
             out IEnumerable<(Block block, Vector3d point)> terrainCollision,
             out IEnumerable<(Vintagestory.API.Common.Entities.Entity entity, Vector3d point)> entitiesCollision,
-            stackStats);
+            stackStats,
+            AttackDirection.Top);
 
-        if (attacked && StatsMusket.AnimationStaggerOnHitDurationMs > 0)
+        if (hasBayonet && attacked && StatsMusket.AnimationStaggerOnHitDurationMs > 0)
         {
             AnimationBehavior?.SetSpeedModifier(AttackImpactFunction);
-            RangedWeaponSystem.Reload(player.RightHandItemSlot, player.LeftHandItemSlot, 1, true, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.DamageBayonet));
+            RangedWeaponSystem.Reload(slot, player.LeftHandItemSlot, 1, mainHand, ServerAttachBayonetCallback, data: SerializeLoadingStage(MusketLoadingStage.DamageBayonet));
         }
     }
     protected virtual bool AttackImpactFunction(TimeSpan duration, ref TimeSpan delta)
@@ -244,14 +362,28 @@ public class MusketServer : MuzzleloaderServer
                     if (ammoSlot?.Itemstack == null) return false;
 
                     ItemStack bayonet = ammoSlot.TakeOut(1);
+                    if (bayonet == null || bayonet.StackSize <= 0) return false;
+                    bayonet.ResolveBlockOrItem(Api.World);
 
                     BayonetInventory.Read(slot, BayonetInventoryId);
+                    if (BayonetInventory.Items.Count > 0)
+                    {
+                        BayonetInventory.Clear();
+                        return false;
+                    }
                     BayonetInventory.Items.Add(bayonet);
                     BayonetInventory.Write(slot);
                     BayonetInventory.Clear();
 
-                    int renderVariant = bayonet.ItemAttributes["musketRenderVariant"].AsInt();
-                    slot.Itemstack?.Attributes?.SetInt("renderVariant", renderVariant);
+                    if (slot.Itemstack != null && FirearmRenderVariantUtil.TryGetBayonetRenderVariant(slot.Itemstack, bayonet, out int renderVariant))
+                    {
+                        slot.Itemstack.Attributes.SetInt("renderVariant", renderVariant);
+                    }
+                    else
+                    {
+                        slot.Itemstack?.Attributes?.RemoveAttribute("renderVariant");
+                        Api.Logger.Warning($"[maltiezfirearms] Could not resolve a valid renderVariant for bayonet '{bayonet.Collectible?.Code}' on firearm '{slot.Itemstack?.Collectible?.Code}'. The attachment was kept but the alternate firearm model was not applied.");
+                    }
                     slot.MarkDirty();
                     ammoSlot.MarkDirty();
                 }
@@ -259,6 +391,12 @@ public class MusketServer : MuzzleloaderServer
             case MusketLoadingStage.DamageBayonet:
                 {
                     BayonetInventory.Read(slot, BayonetInventoryId);
+                    if (BayonetInventory.Items.Count == 0)
+                    {
+                        BayonetInventory.Clear();
+                        return false;
+                    }
+
                     ItemStack bayonet = BayonetInventory.Items[0];
                     bayonet.ResolveBlockOrItem(Api.World);
                     DummySlot dummySlot = new(bayonet);
@@ -275,6 +413,14 @@ public class MusketServer : MuzzleloaderServer
             case MusketLoadingStage.DetachBayonet:
                 {
                     BayonetInventory.Read(slot, BayonetInventoryId);
+                    if (BayonetInventory.Items.Count == 0)
+                    {
+                        BayonetInventory.Clear();
+                        slot.Itemstack?.Attributes?.RemoveAttribute("renderVariant");
+                        slot.MarkDirty();
+                        return false;
+                    }
+
                     ItemStack bayonet = BayonetInventory.Items[0];
                     bayonet.ResolveBlockOrItem(Api.World);
                     BayonetInventory.Items.Clear();
@@ -365,6 +511,7 @@ public class MusketItem : Item, IHasWeaponLogic, IHasRangedWeaponLogic, IHasIdle
 
     public override void OnHeldRenderOpaque(ItemSlot inSlot, IClientPlayer byPlayer)
     {
+        FirearmRenderVariantUtil.SanitizeRenderVariant(inSlot.Itemstack);
         base.OnHeldRenderOpaque(inSlot, byPlayer);
 
         if (DebugWindowManager.RenderDebugColliders)
@@ -375,6 +522,7 @@ public class MusketItem : Item, IHasWeaponLogic, IHasRangedWeaponLogic, IHasIdle
 
     public override int GetRemainingDurability(ItemStack itemstack)
     {
+        FirearmRenderVariantUtil.SanitizeRenderVariant(itemstack);
         int durability = base.GetRemainingDurability(itemstack);
         int maxDurability = GetMaxDurability(itemstack);
         if (durability > maxDurability)

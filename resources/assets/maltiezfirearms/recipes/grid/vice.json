@@ -1,0 +1,26 @@
+[
+  {
+    "ingredientPattern": "I_I,NBN,_P_",
+    "ingredients": {
+      "I": { "type": "item", "code": "game:ingot-iron", "quantity": 1 },
+      "N": { "type": "item", "code": "game:metalnailsandstrips-iron", "quantity": 1 },
+      "B": { "type": "item", "code": "game:ingot-brass", "quantity": 1 },
+      "P": { "type": "item", "code": "game:plank-*", "quantity": 1 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "maltiezfirearms:vice-iron-east", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "I_I,NBN,_P_",
+    "ingredients": {
+      "I": { "type": "item", "code": "game:ingot-tinbronze", "quantity": 1 },
+      "N": { "type": "item", "code": "game:metalnailsandstrips-tinbronze", "quantity": 1 },
+      "B": { "type": "item", "code": "game:ingot-brass", "quantity": 1 },
+      "P": { "type": "item", "code": "game:plank-*", "quantity": 1 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "maltiezfirearms:vice-tinbronze-east", "quantity": 1 }
+  }
+]

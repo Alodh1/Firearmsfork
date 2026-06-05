@@ -1,8 +1,5 @@
 {
-  "ingredient": {
-    "type": "item",
-    "code": "game:ingot-brass"
-  },
+  "ingredient": {"type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["brass", "copper", "tinbronze", "bismuthbronze", "blackbronze", "iron", "meteoriciron", "steel"]},
   "pattern": [
     [
       "#####_####",
@@ -31,9 +28,5 @@
     ]
   ],
   "name": "Flask furniture",
-  "output": {
-    "type": "item",
-    "code": "maltiezfirearms:flaskfurniture-brass"
-  },
-  "code": "firearms-flask-furniture-0-maltiezfirearms-flaskfurniture--metal"
+  "output": {"type": "item", "code": "maltiezfirearms:flaskfurniture-{metal}"}
 }

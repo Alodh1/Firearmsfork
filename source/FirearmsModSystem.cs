@@ -7,6 +7,7 @@ namespace Firearms;
 public class FirearmsSettings
 {
     public string AimingCursorType { get; set; } = "None";
+    public bool EnableBulletTrails { get; set; } = true;
 }
 
 public class FirearmsModSystem : ModSystem
@@ -37,11 +38,14 @@ public class FirearmsModSystem : ModSystem
     public override void StartClientSide(ICoreClientAPI api)
     {
         FirearmsRecoilSystem.Start(api);
+        FirearmsRenderVariantSanitizer.Start(api);
+        ApplyBulletTrailSetting();
     }
 
     public override void Dispose()
     {
         FirearmsRecoilSystem.Stop();
+        FirearmsRenderVariantSanitizer.Stop();
     }
 
     public override void AssetsFinalize(ICoreAPI api)
@@ -63,13 +67,25 @@ public class FirearmsModSystem : ModSystem
             setting.AssignSettingValue(Settings);
 
             SettingsChanged?.Invoke(Settings);
+            ApplyBulletTrailSetting();
         };
 
         system.ConfigsLoaded += () =>
         {
             system.GetConfig("maltiezfirearms")?.AssignSettingsValues(Settings);
             SettingsChanged?.Invoke(Settings);
+            ApplyBulletTrailSetting();
         };
+    }
+
+    private void ApplyBulletTrailSetting()
+    {
+        Type? rendererType = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.GetType("CombatOverhaul.RangedSystems.ProjectileTrailRenderer", false))
+            .FirstOrDefault(type => type != null);
+
+        rendererType?.GetMethod("SetEnabled", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            ?.Invoke(null, new object[] { Settings.EnableBulletTrails });
     }
 
     private void CheckStatusClientSide(ICoreClientAPI api)

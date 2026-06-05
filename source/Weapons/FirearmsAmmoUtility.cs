@@ -25,13 +25,20 @@ internal static class FirearmsAmmoUtility
 
     public static bool TryConsumeAndLoadBullets(ItemInventoryBuffer inventory, ItemSlot ammoSlot, int bulletsLoaded, int bulletsLoadedPerBulletItem)
     {
+        if (!TryLoadBulletsWithoutConsuming(inventory, ammoSlot, bulletsLoaded, bulletsLoadedPerBulletItem)) return false;
+
+        int bulletItemsRequired = BulletItemsRequired(bulletsLoaded, bulletsLoadedPerBulletItem);
+        if (bulletItemsRequired > 0) ammoSlot.TakeOut(bulletItemsRequired);
+
+        return true;
+    }
+
+    public static bool TryLoadBulletsWithoutConsuming(ItemInventoryBuffer inventory, ItemSlot ammoSlot, int bulletsLoaded, int bulletsLoadedPerBulletItem)
+    {
         if (ammoSlot.Itemstack == null || !HasEnoughBulletItems(ammoSlot, bulletsLoaded, bulletsLoadedPerBulletItem)) return false;
 
         ItemStack ammoTemplate = ammoSlot.Itemstack.Clone();
         ammoTemplate.StackSize = 1;
-
-        int bulletItemsRequired = BulletItemsRequired(bulletsLoaded, bulletsLoadedPerBulletItem);
-        if (bulletItemsRequired > 0) ammoSlot.TakeOut(bulletItemsRequired);
 
         for (int count = 0; count < bulletsLoaded; count++)
         {
@@ -51,7 +58,7 @@ internal static class FirearmsAmmoUtility
         }
 
         // Firearm projectiles should not be recoverable and should be destroyed
-        // once they collide with terrain or an entity.
+        // once they collide with terrain, an entity, or any other solid impact.
         stats.CanBeCollected = false;
         stats.DropChance = 0;
 

@@ -207,6 +207,14 @@
       ]
     },
     {
+      "code": "enable_bullet_trails",
+      "type": "boolean",
+      "ingui": "maltiezfirearms:setting-enable_bullet_trails",
+      "comment": "maltiezfirearms:setting-comment-enable_bullet_trails",
+      "default": true,
+      "clientSide": true
+    },
+    {
       "code": "aiming_difficulty",
       "type": "float",
       "ingui": "maltiezfirearms:setting-aiming_difficulty",
