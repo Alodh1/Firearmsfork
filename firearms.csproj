@@ -150,8 +150,6 @@
   <!-- Archives output directory into zip and puts it into Releases folder -->
   <Target Name="ZipFiles" AfterTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
     <Message Text="Packaging into '$(ReleaseFile)'" Importance="high" />
-    <MakeDir Directories="$(ReleasesDir)" />
-    <Delete Files="$(ReleasePath)" />
-    <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(ReleasePath)" />
+    <Exec Command="python &quot;$(Scripts)\package_zip.py&quot; &quot;$(OutputPath).&quot; &quot;$(ReleasePath)&quot;" />
   </Target>
 </Project>
