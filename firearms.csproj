@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ModName>Firearms</ModName>
     <ModType>code</ModType>
-    <ModVersion>1.9.15</ModVersion>
+    <ModVersion>1.9.16</ModVersion>
     <ModId>firearmsfork</ModId>
     <Description>Black powder firearms</Description>
     <Side>Universal</Side>
