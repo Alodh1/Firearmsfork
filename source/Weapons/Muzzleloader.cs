@@ -1245,7 +1245,7 @@ public class MuzzleloaderServer : RangeWeaponServer
                 Velocity = GetDirectionWithDispersion(packet.Velocity, [Stats.DispersionMOA[0] * stackStats.DispersionMultiplier, Stats.DispersionMOA[1] * stackStats.DispersionMultiplier]) * Stats.BulletVelocity * stackStats.ProjectileSpeed,
             };
 
-            ProjectileSystem.Spawn(packet.ProjectileId[count], stats, spawnStats, ammo, slot.Itemstack, shooter);
+            ProjectileSystem.SpawnFromWeaponSlot(packet.ProjectileId[count], stats, spawnStats, ammo, slot, shooter);
 
             /*for (int index = 0; index < 1000; index++)
             {
@@ -1258,7 +1258,7 @@ public class MuzzleloaderServer : RangeWeaponServer
                     Velocity = GetDirectionWithDispersion(packet.Velocity, Stats.DispersionMOA) * Stats.BulletVelocity
                 };
 
-                ProjectileSystem.Spawn(Guid.NewGuid(), stats, spawnStats2, ammo, slot.Itemstack, shooter);
+                ProjectileSystem.SpawnFromWeaponSlot(Guid.NewGuid(), stats, spawnStats2, ammo, slot, shooter);
             }*/
 
             count++;

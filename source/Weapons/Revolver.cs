@@ -1387,7 +1387,7 @@ public class RevolverServer : RangeWeaponServer
                 Velocity = velocity,
             };
 
-            ProjectileSystem.Spawn(packet.ProjectileId[count], stats, spawnStats, ammo, slot.Itemstack, shooter);
+            ProjectileSystem.SpawnFromWeaponSlot(packet.ProjectileId[count], stats, spawnStats, ammo, slot, shooter);
 
             count++;
         }
